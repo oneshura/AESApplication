@@ -8,15 +8,15 @@ The GUI was implemented using Tkinter, a popular and built-in Python library.
 - I am unable to upload the entire project, for some reason, which I would do later 
 
 # Features to be Added  
-- A progress bar when encrypting larger files 
-- A dialog display upon successful or unsuccessful encryption or decryption
-- Possible support for more complex file extensions, e.g. .docx, etc.
-- A short documentation
-- Display which file extensions can be encrypted 
+- [ ] A progress bar when encrypting larger files 
+- [ ] A dialog display upon successful or unsuccessful encryption or decryption
+- [ ] Possible support for more complex file extensions, e.g. .docx, etc.
+- [ ] A short documentation
+- [ ] Display which file extensions can be encrypted 
 
 # Fixes to be Added Later 
-- Fix the size of the password window
-- Some file extensions cannot be decrypted properly  
+- [ ] Fix the size of the password window
+- [ ] Some file extensions cannot be decrypted properly  
 
 # Usage 
 ## Encryption
