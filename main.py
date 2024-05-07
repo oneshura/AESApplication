@@ -1,87 +1,48 @@
 import tkinter as tk
-from tkinter import filedialog
+from tkinter import filedialog, messagebox
 import os
-import pyzipper
-
-def encrypt():
-    if selected_file:
-        print("encrypting...")
-        password = input_password()
-        if password:
-            try:
-                encrypt_file(selected_file, password)
-            except FileNotFoundError:
-                print(f"Error: File '{selected_file}' not found.")
-    else:
-        print("No file selected.")
-
-def decrypt():
-    if selected_file:
-        print("decrypting...")
-        password = input_password()
-        if password:
-            try:
-                decrypt_file(selected_file, password)
-            except FileNotFoundError:
-                print(f"Error: File '{selected_file}' not found.")
-            except pyzipper.BadZipFile:
-                print("Error: Invalid password or corrupted file.")
-    else:
-        print("No file selected.")
+import hashlib
+from Crypto.Cipher import AES
+from Crypto.Util.Padding import pad, unpad
 
 def input_password():
     new_window = tk.Toplevel(mainWindow)
     new_window.title("Enter Password")
 
+    password_label = tk.Label(new_window, text="Input Password:")
+    password_label.grid(row=0, column=0, padx=10, pady=10)
+
     password_var = tk.StringVar()
     password_entry = tk.Entry(new_window, show="*", textvariable=password_var)
     password_entry.grid(row=0, column=1, padx=10, pady=10)
 
+    show_password_var = tk.IntVar()
+    show_password_checkbox = tk.Checkbutton(new_window, text="Show Password", variable=show_password_var, command=lambda: show_password(password_entry, show_password_var.get()))
+    show_password_checkbox.grid(row=1, column=0, columnspan=2, padx=10, pady=5)
+
+    delete_file_var = tk.IntVar()
+    delete_file_checkbox = tk.Checkbutton(new_window, text="Delete File Upon Encryption/Decryption", variable=delete_file_var)
+    delete_file_checkbox.grid(row=2, column=0, columnspan=2, padx=10, pady=5)
+
     ok_button = tk.Button(new_window, text="OK", command=lambda: new_window.destroy())
-    ok_button.grid(row=1, column=0, columnspan=2, padx=10, pady=10)
+    ok_button.grid(row=3, column=0, columnspan=2, padx=10, pady=10)
+
+    # Centering the input password window
+    new_window.update_idletasks()
+    width = new_window.winfo_width()
+    height = new_window.winfo_height()
+    x = (new_window.winfo_screenwidth() // 2) - (width // 2)
+    y = (new_window.winfo_screenheight() // 2) - (height // 2)
+    new_window.geometry('{}x{}+{}+{}'.format(width, height, x, y))
 
     new_window.wait_window()
-    return password_var.get()
+    return password_var.get(), delete_file_var.get()
 
-def encrypt_file(file_path, password):
-    encrypted_file_path = file_path + '.enc'
-    try:
-        with open(file_path, 'rb') as f_in:
-            with pyzipper.AESZipFile(encrypted_file_path, 'w', compression=pyzipper.ZIP_LZMA, encryption=pyzipper.WZ_AES) as zf:
-                zf.setpassword(password.encode())
-                # Get the original file extension
-                original_file_name, original_file_ext = os.path.splitext(os.path.basename(file_path))
-                # Write the original file name with its extension to the encrypted file
-                zf.write(os.path.basename(file_path), f_in.read())
-                # Store the original file extension as a comment in the zip file
-                zf.comment = original_file_ext.encode()
-    except FileNotFoundError:
-        print(f"Error: File '{file_path}' not found.")
-        return
-
-    print(f"File encrypted and saved as: {encrypted_file_path}")
-
-def decrypt_file(file_path, password):
-    encrypted_file_path = file_path + '.enc'
-    try:
-        with pyzipper.AESZipFile(encrypted_file_path, 'r') as zf:
-            zf.setpassword(password.encode())
-            # Retrieve the original file extension from the comment
-            original_file_ext = zf.comment.decode()
-            # Extract all files from the encrypted zip file
-            for name in zf.namelist():
-                # Create the decrypted file path by removing the '.enc' extension
-                decrypted_file_path = os.path.join(os.path.dirname(file_path), os.path.splitext(os.path.basename(file_path))[0] + original_file_ext)
-                with open(decrypted_file_path, 'wb') as f_out:
-                    f_out.write(zf.read(name))
-    except FileNotFoundError:
-        print(f"Error: File '{file_path}' not found.")
-        return
-    except pyzipper.BadZipFile:
-        print("Error: Invalid password or corrupted file.")
-        return
-
-    print(f"File decrypted successfully.")
+def show_password(password_entry, show):
+    if show:
+        password_entry.config(show="")
+    else:
+        password_entry.config(show="*")
 
 def select_file():
     global selected_file
@@ -96,6 +57,70 @@ def update_file_info():
         file_info_label.config(text=f"File: {file_name}\nDirectory: {file_dir}\nFormat: {file_ext}")
     else:
         file_info_label.config(text="No file selected.")
+
+def get_key_from_password(password):
+    key = hashlib.sha256(password.encode()).digest()
+    return key
+
+def encrypt():
+    if not selected_file:
+        messagebox.showerror("Error", "No file selected for encryption.")
+        return
+
+    password, delete_file = input_password()
+    key = get_key_from_password(password)
+
+    output_filename = selected_file + ".encrypted"
+
+    try:
+        cipher = AES.new(key, AES.MODE_CBC)
+        with open(selected_file, 'rb') as f:
+            plaintext = f.read()
+            padded_plaintext = pad(plaintext, AES.block_size)
+            ciphertext = cipher.encrypt(padded_plaintext)
+        with open(output_filename, 'wb') as f:
+            f.write(cipher.iv)
+            f.write(ciphertext)
+        messagebox.showinfo("Success", "File encrypted successfully.")
+
+        if delete_file:
+            os.remove(selected_file)
+            update_file_info()
+    except Exception as e:
+        messagebox.showerror("Error", f"Failed to encrypt file: {str(e)}")
+
+def decrypt():
+    if not selected_file:
+        messagebox.showerror("Error", "No file selected for decryption.")
+        return
+
+    if not selected_file.endswith(".encrypted"):
+        messagebox.showerror("Error", "Please select a .encrypted file for decryption.")
+        return
+
+    password, delete_file = input_password()
+    key = get_key_from_password(password)
+
+    output_filename = os.path.splitext(selected_file)[0]
+
+    with open(selected_file, 'rb') as f:
+        iv = f.read(16)
+        ciphertext = f.read()
+    cipher = AES.new(key, AES.MODE_CBC, iv)
+    try:
+        plaintext = cipher.decrypt(ciphertext)
+        unpadded_plaintext = unpad(plaintext, AES.block_size)
+        with open(output_filename, 'wb') as f:
+            f.write(unpadded_plaintext)
+        messagebox.showinfo("Success", "File decrypted successfully.")
+    except ValueError:
+        messagebox.showerror("Error", "Incorrect password entered.")
+    except Exception as e:
+        messagebox.showerror("Error", f"Failed to decrypt file: {str(e)}")
+
+    if delete_file:
+        os.remove(selected_file)
+        update_file_info()
 
 mainWindow = tk.Tk()
 mainWindow.title("AES Application")
@@ -112,11 +137,9 @@ center_y = int(screen_height/2 - window_height / 2)
 
 mainWindow.geometry(f'{window_width}x{window_height}+{center_x}+{center_y}')
 
-# Frame for buttons
 button_frame = tk.Frame(mainWindow, bd=2, relief=tk.GROOVE)
 button_frame.pack(side=tk.TOP, fill=tk.X, expand=False, padx=10, pady=10)
 
-# Frame for file information
 file_info_frame = tk.Frame(mainWindow, bd=2, relief=tk.GROOVE)
 file_info_frame.pack(side=tk.BOTTOM, fill=tk.BOTH, expand=True, padx=10, pady=10)
 
