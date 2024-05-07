@@ -25,9 +25,7 @@ Likewise, select a file, then decrypt it, and provide the exact key.
 
 # Dependencies 
 - Python 3.x
-- tkinter
 - pycrptodome  
-- Hashlib
 - cx_Freeze
 
 # Building the Project 
