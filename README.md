@@ -9,14 +9,12 @@ The GUI was implemented using Tkinter, a popular and built-in Python library.
 
 # Features to be Added  
 - [ ] A progress bar when encrypting larger files 
-- [ ] A dialog display upon successful or unsuccessful encryption or decryption
-- [ ] Possible support for more complex file extensions, e.g. .docx, etc.
-- [ ] A short documentation
-- [ ] Display which file extensions can be encrypted 
+- [x] A dialog display upon successful or unsuccessful encryption or decryption
+- [x] Possible support for more complex file extensions, e.g. .docx, etc.
 
 # Fixes to be Added Later 
-- [ ] Fix the size of the password window
-- [ ] Some file extensions cannot be decrypted properly  
+- [x] Fix the size of the password window
+- [x] Some file extensions cannot be decrypted properly  
 
 # Usage 
 ## Encryption
@@ -27,8 +25,18 @@ Likewise, select a file, then decrypt it, and provide the exact key.
 
 # Dependencies 
 - Python 3.x
-- Pyzipper
+- tkinter
+- pycrptodome  
+- Hashlib
+- cx_Freeze
+
+# Building the Project 
+- Download the dependencies 
+- Download cx_Freeze
+- Execute the command in terminal: "python setup.py build"
 
 # Final Project for Information Assurance and Security
 This application was developed as one of the applications proposed for the final project of Information Assurance and Security. It demonstrates the implementation and functionality of cryptography using AES.
+
+
 
