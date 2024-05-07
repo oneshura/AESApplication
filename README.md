@@ -25,12 +25,11 @@ Likewise, select a file, then decrypt it, and provide the exact key.
 
 # Dependencies 
 - Python 3.x
-- pycrptodome  
+- pycryptodome
 - cx_Freeze
 
 # Building the Project 
-- Download the dependencies 
-- Download cx_Freeze
+- Download and install both pycrpytodome and cx_Freeze
 - Execute the command in terminal: "python setup.py build"
 
 # Final Project for Information Assurance and Security
